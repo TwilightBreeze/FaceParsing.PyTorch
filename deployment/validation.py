@@ -107,8 +107,8 @@ def get_network(cfg, pretrained_path):
         net = DANet(pretrained=False)
     elif cfg.network == 'UNet':
         net = UNet()
-    elif cfg.network == 'FaceParseNet101':
-        net = FaceParseNet101(pretrained=False)
+    elif cfg.network == 'FaceParseNet50':
+        net = FaceParseNet50(pretrained=False)
     elif cfg.network == 'DABNet':
         net = DABNet()
     elif cfg.network == 'CE2P':
@@ -131,11 +131,12 @@ if __name__ == '__main__':
     parser.add_argument('--size', type=int,
                         default=512, help='size of image')
     parser.add_argument('--pretrained_path', type=str,
-                        default="./segmentation/DANet_47.pth", help="pretrained model's path")
+                        default="/home/ubuntu/Projects/FaceParsing.PyTorch/models/FaceParseNet50/38_G.pth", help="pretrained model's path")
     parser.add_argument('--network', type=str,
-                        default="DANet", help="network's name")
+                        default="FaceParseNet50", help="network's name")
     args = parser.parse_args()
-
+    input_path = "/home/ubuntu/Projects/SHMT/Makeup-Wild/images/makeup"
+    output_path = "/home/ubuntu/Projects/SHMT/Makeup-Wild/seg2/makeup"
     # Segmentation model loading
     pretrained_path = args.pretrained_path
     if args.cpu:
@@ -150,12 +151,12 @@ if __name__ == '__main__':
     net = get_network(args, pretrained_dict)
     net = net.to(device)
 
-    if not os.path.exists("result/images"):
-        os.makedirs("result/images")
-    if not os.path.exists("result/renders"):
-        os.makedirs("result/renders")
+    if not os.path.exists(input_path):
+        os.makedirs(input_path)
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
 
-    for idx, img_path in enumerate(list_images("./result/images")):
+    for idx, img_path in enumerate(list_images(input_path)):
         img = Image.open(img_path).convert("RGB")
         img = img.resize((args.size, args.size))  # 512
 
@@ -174,7 +175,7 @@ if __name__ == '__main__':
                 output, (args.size, args.size), mode='bilinear', align_corners=True)  # [1, 19, 512, 512]
             parsing = np.squeeze(output.data.max(1)[1].cpu().numpy(), axis=0)
             fusing = vis_parsing_maps(img, parsing)
-            fusing.save(os.path.join("./result/renders", f"{idx}.png"))
+            fusing.save(os.path.join(output_path, f"{idx}_makeup_color.png"))
 
     # For GT Mask
     # for idx, (img_path, mask_path) in enumerate(zip(list_images("./result/images"), list_images("./result/masks"))):
